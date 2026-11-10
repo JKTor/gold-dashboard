@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gold Dashboard</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+body{background:#0d1117;color:#e6edf3;font-family:'Segoe UI',system-ui,sans-serif;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
+/* ── HEADER ── */
+header{background:#161b22;border-bottom:1px solid #30363d;padding:8px 18px;display:flex;align-items:center;gap:14px;flex-shrink:0}
+.logo{font-size:1.2rem;font-weight:700;color:#ffd700;display:flex;align-items:center;gap:7px;white-space:nowrap}
+.logo-dot{width:7px;height:7px;background:#ffd700;border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.header-meta{font-size:.72rem;color:#8b949e;line-height:1.5}
+.header-meta b{color:#3fb950}
+.h-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.notif-btn{background:none;border:1px solid #30363d;color:#8b949e;padding:4px 10px;border-radius:6px;font-size:.72rem;cursor:pointer;transition:all .15s}
+.notif-btn:hover{border-color:#ffd700;color:#ffd700}
+.notif-btn.on{border-color:#3fb950;color:#3fb950}
+
+/* ── GOLD STRIP ── */
+.gold-strip{background:#0d1421;border-bottom:1px solid #30363d;padding:7px 18px;display:flex;align-items:center;gap:0;flex-shrink:0;overflow-x:auto;flex-wrap:nowrap}
+.gs-block{display:flex;flex-direction:column;padding:0 16px;border-right:1px solid #21262d;min-width:max-content}
+.gs-block:first-child{padding-left:0}
+.gs-block:last-child{border-right:none;padding-right:0;margin-left:auto}
+.gs-label{font-size:.62rem;color:#8b949e;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px}
+.gs-title{font-size:.7rem;font-weight:700;color:#ffd700;margin-bottom:4px}
+.gs-row{display:flex;gap:14px}
+.gs-item{display:flex;flex-direction:column}
+.gs-item .lbl{font-size:.6rem;color:#6e7681}
+.gs-item .val{font-size:.88rem;font-weight:700;color:#e6edf3}
+.gs-item .val.green{color:#3fb950}
+.gs-item .val.red{color:#f85149}
+.gs-pct{font-size:.65rem;padding:1px 6px;background:rgba(255,215,0,.12);color:#ffd700;border:1px solid rgba(255,215,0,.3);border-radius:4px;align-self:flex-end;margin-left:4px}
+.gs-src{font-size:.6rem;color:#484f58;margin-top:2px}
+
+/* converter */
+.converter{display:flex;align-items:center;gap:6px;padding-left:16px}
+.conv-title{font-size:.65rem;color:#8b949e;white-space:nowrap;margin-right:2px}
+.conv-input{background:#1c2128;border:1px solid #30363d;color:#e6edf3;padding:3px 8px;border-radius:6px;font-size:.82rem;width:90px;text-align:right}
+.conv-input:focus{outline:none;border-color:#ffd700}
+.conv-eq{color:#8b949e;font-size:.8rem}
+.conv-out{font-size:.9rem;font-weight:700;color:#ffd700;min-width:110px}
+.conv-unit{font-size:.72rem;color:#8b949e}
+.usdthb-badge{font-size:.72rem;color:#4fc3f7;background:rgba(79,195,247,.08);border:1px solid rgba(79,195,247,.2);padding:2px 7px;border-radius:4px;white-space:nowrap}
+
+/* ── ALERT BANNER ── */
+.alert-banner{background:#1a0e0e;border:1px solid rgba(248,81,73,.4);border-radius:8px;margin:8px 14px 0;padding:8px 14px;display:none;align-items:center;gap:10px;flex-shrink:0}
+.alert-banner.show{display:flex}
+.alert-icon{font-size:1.1rem}
+.alert-text{font-size:.8rem;flex:1;line-height:1.4}
+.alert-text strong{color:#f85149;display:block;font-size:.72rem;text-transform:uppercase;margin-bottom:2px}
+.alert-close{background:none;border:none;color:#8b949e;cursor:pointer;font-size:1rem;padding:0 4px}
+.alert-close:hover{color:#f85149}
+
+/* ── MAIN ── */
+.main{display:flex;flex:1;overflow:hidden}
+
+/* ── CHART ── */
+.chart-side{flex:1;display:flex;flex-direction:column;min-width:0;padding:10px 10px 10px 14px;gap:8px}
+.panel-label{font-size:.68rem;font-weight:600;color:#8b949e;text-transform:uppercase;letter-spacing:.07em;display:flex;align-items:center;gap:6px}
+.panel-label::before{content:'';display:inline-block;width:3px;height:11px;background:#ffd700;border-radius:2px}
+.chart-wrap{flex:1;border-radius:10px;overflow:hidden;border:1px solid #30363d;background:#161b22}
+
+/* ── NEWS ── */
+.news-side{width:400px;flex-shrink:0;border-left:1px solid #30363d;display:flex;flex-direction:column;overflow:hidden}
+.news-top{padding:10px 14px;background:#161b22;border-bottom:1px solid #30363d;flex-shrink:0}
+.news-top-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.news-heading{font-size:.9rem;font-weight:600}
+.news-sub{font-size:.68rem;color:#8b949e;margin-top:1px}
+
+.filter-row{display:flex;gap:5px;margin-bottom:5px;align-items:center}
+.filter-lbl{font-size:.6rem;color:#484f58;width:36px;flex-shrink:0}
+.tab{padding:2px 8px;border-radius:20px;border:1px solid #30363d;font-size:.68rem;cursor:pointer;color:#8b949e;background:none;transition:all .15s;white-space:nowrap}
+.tab:hover{border-color:#ffd700;color:#ffd700}
+.tab.active{background:#ffd700;border-color:#ffd700;color:#0d1117;font-weight:700}
+.tab.active-red{background:#f85149;border-color:#f85149;color:#fff;font-weight:700}
+.tab.active-yellow{background:#d29922;border-color:#d29922;color:#0d1117;font-weight:700}
+.tab.active-green{background:#3fb950;border-color:#3fb950;color:#0d1117;font-weight:700}
+
+.refresh-btn{background:none;border:1px solid #30363d;color:#8b949e;padding:3px 9px;border-radius:6px;font-size:.68rem;cursor:pointer;display:flex;align-items:center;gap:3px;transition:all .15s}
+.refresh-btn:hover{border-color:#ffd700;color:#ffd700}
+.refresh-btn.spinning .icon{animation:spin .7s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* news list */
+.news-scroll{overflow-y:auto;flex:1;padding:8px}
+.news-scroll::-webkit-scrollbar{width:3px}
+.news-scroll::-webkit-scrollbar-thumb{background:#30363d;border-radius:3px}
+
+.news-card{background:#161b22;border:1px solid #21262d;border-radius:9px;padding:10px 12px;margin-bottom:7px;cursor:pointer;transition:border-color .15s,background .15s;text-decoration:none;display:block}
+.news-card:hover{border-color:#ffd700;background:#1c2128}
+.news-card.imp-high{border-left:3px solid #f85149}
+.news-card.imp-medium{border-left:3px solid #d29922}
+.news-card.imp-gold{border-left:3px solid #ffd700}
+
+.ncard-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px}
+.source-tag{font-size:.62rem;font-weight:700;color:#ffd700;text-transform:uppercase;letter-spacing:.05em}
+.impact-badge{font-size:.6rem;font-weight:600;padding:1px 6px;border-radius:3px}
+.impact-high{background:rgba(248,81,73,.12);color:#f85149;border:1px solid rgba(248,81,73,.25)}
+.impact-medium{background:rgba(210,153,34,.12);color:#d29922;border:1px solid rgba(210,153,34,.25)}
+.impact-low{background:rgba(63,185,80,.12);color:#3fb950;border:1px solid rgba(63,185,80,.25)}
+.impact-gold{background:rgba(255,215,0,.12);color:#ffd700;border:1px solid rgba(255,215,0,.25)}
+
+.news-title{font-size:.82rem;line-height:1.4;color:#e6edf3;font-weight:500}
+.news-foot{margin-top:6px;font-size:.67rem;color:#8b949e;display:flex;align-items:center;gap:6px}
+.topic-chip{font-size:.58rem;padding:1px 5px;border-radius:3px;border:1px solid #30363d;color:#6e7681}
+.topic-oil{border-color:rgba(251,146,60,.3);color:#fb923c}
+.topic-gold{border-color:rgba(255,215,0,.3);color:#ffd700}
+.topic-fed{border-color:rgba(167,139,250,.3);color:#a78bfa}
+.topic-economy{border-color:rgba(79,195,247,.3);color:#4fc3f7}
+
+.state-msg{text-align:center;padding:40px 20px;color:#8b949e}
+.spin-ring{width:26px;height:26px;border:2px solid #30363d;border-top-color:#ffd700;border-radius:50%;animation:spin .75s linear infinite;margin:0 auto 10px}
+.state-msg p{font-size:.84rem}
+.state-msg small{font-size:.7rem;margin-top:5px;display:block;line-height:1.6}
+
+/* footer */
+footer{background:#161b22;border-top:1px solid #21262d;padding:5px 18px;font-size:.65rem;color:#484f58;display:flex;justify-content:space-between;flex-shrink:0}
+#lastUpdate{color:#6e7681}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo"><div class="logo-dot"></div>Gold Dashboard</div>
+  <div class="header-meta">
+    กราฟ &amp; ข่าวการเงินโลก &#8212; อัปเดตทุก 5 นาที<br>
+    <b>&#9679; LIVE</b> &nbsp;|&nbsp; แหล่งข่าว: Kitco · Reuters · BBC · NYT · MarketWatch
+  </div>
+  <div class="h-right">
+    <button class="notif-btn" id="notifBtn" onclick="toggleNotif()">&#128276; แจ้งเตือนข่าวสำคัญ</button>
+  </div>
+</header>
+
+<!-- GOLD PRICE STRIP -->
+<div class="gold-strip">
+  <div class="gs-block">
+    <div class="gs-title">ทองแท่ง (96.5%)</div>
+    <div class="gs-row">
+      <div class="gs-item"><span class="lbl">รับซื้อ</span><span class="val red" id="barBuy">&#8212;</span></div>
+      <div class="gs-item"><span class="lbl">ขายออก</span><span class="val green" id="barSell">&#8212;</span></div>
+    </div>
+    <div class="gs-src" id="barSrc">&#8212;</div>
+  </div>
+  <div class="gs-block">
+    <div class="gs-title">ทองรูปพรรณ (96.5%)</div>
+    <div class="gs-row">
+      <div class="gs-item"><span class="lbl">รับซื้อ</span><span class="val red" id="jewBuy">&#8212;</span></div>
+      <div class="gs-item"><span class="lbl">ขายออก</span><span class="val green" id="jewSell">&#8212;</span></div>
+      <span class="gs-pct" id="jewPct">&#8212;</span>
+    </div>
+    <div class="gs-src">เทียบ ทองแท่ง</div>
+  </div>
+  <div class="gs-block">
+    <div class="gs-title">XAU/USD &amp; อัตราแลกเปลี่ยน</div>
+    <div class="gs-row">
+      <div class="gs-item"><span class="lbl">XAU/USD</span><span class="val" id="xauVal">&#8212;</span></div>
+      <div class="gs-item"><span class="lbl">USD/THB</span><span class="usdthb-badge" id="usdthbVal">&#8212;</span></div>
+    </div>
+    <div class="gs-src" id="rateSrc">&#8212;</div>
+  </div>
+  <div class="gs-block">
+    <div class="gs-title">แปลงสกุลเงิน</div>
+    <div class="converter">
+      <input class="conv-input" id="usdInput" type="number" placeholder="USD" oninput="convertCurrency()" />
+      <span class="conv-eq">=</span>
+      <span class="conv-out" id="thbOutput">&#8212;</span>
+      <span class="conv-unit">THB</span>
+    </div>
+    <div class="gs-src">อ้างอิง USD/THB ปัจจุบัน</div>
+  </div>
+</div>
+
+<!-- ALERT BANNER -->
+<div class="alert-banner" id="alertBanner">
+  <span class="alert-icon">&#9888;&#65039;</span>
+  <div class="alert-text">
+    <strong>ข่าวสำคัญ &#8212; ควรอ่าน</strong>
+    <span id="alertText"></span>
+  </div>
+  <button class="alert-close" onclick="document.getElementById('alertBanner').classList.remove('show')">&#10005;</button>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <!-- LEFT: Chart -->
+  <div class="chart-side">
+    <div class="panel-label">กราฟราคาทองคำ XAU/USD &#8212; TradingView</div>
+    <div class="chart-wrap" id="tvChart"></div>
+  </div>
+
+  <!-- RIGHT: News -->
+  <div class="news-side">
+    <div class="news-top">
+      <div class="news-top-row">
+        <div>
+          <div class="news-heading">ข่าวการเงินโลก</div>
+          <div class="news-sub" id="newsCount">&#8212;</div>
+        </div>
+        <button class="refresh-btn" id="refreshBtn" onclick="loadNews()">
+          <span class="icon">&#8635;</span> รีเฟรช
+        </button>
+      </div>
+      <!-- Impact filter -->
+      <div class="filter-row">
+        <span class="filter-lbl">Impact</span>
+        <button class="tab active" id="fi-all"    onclick="setImpactFilter('all',this)">ทั้งหมด</button>
+        <button class="tab"        id="fi-high"   onclick="setImpactFilter('high',this)">&#128308; สำคัญ</button>
+        <button class="tab"        id="fi-medium" onclick="setImpactFilter('medium',this)">&#128993; กลาง</button>
+        <button class="tab"        id="fi-low"    onclick="setImpactFilter('low',this)">&#128994; น้อย</button>
+      </div>
+      <!-- Topic filter -->
+      <div class="filter-row">
+        <span class="filter-lbl">หมวด</span>
+        <button class="tab active" id="ft-all"     onclick="setTopicFilter('all',this)">ทั้งหมด</button>
+        <button class="tab"        id="ft-gold"    onclick="setTopicFilter('gold',this)">&#10024; ทองคำ</button>
+        <button class="tab"        id="ft-oil"     onclick="setTopicFilter('oil',this)">&#128167; น้ำมัน</button>
+        <button class="tab"        id="ft-fed"     onclick="setTopicFilter('fed',this)">&#127981; Fed</button>
+        <button class="tab"        id="ft-economy" onclick="setTopicFilter('economy',this)">&#128200; เศรษฐกิจ</button>
+      </div>
+    </div>
+    <div class="news-scroll" id="newsList">
+      <div class="state-msg"><div class="spin-ring"></div><p>กำลังโหลดข่าว...</p></div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <span id="srcStatus">กำลังเชื่อมต่อ...</span>
+  <span id="lastUpdate">&#8212;</span>
+</footer>
+
+<script src="https://s3.tradingview.com/tv.js"></script>
+<script>
+/* ══════════════════════════════════════════════
+   TRADINGVIEW
+══════════════════════════════════════════════ */
+new TradingView.widget({
+  container_id:"tvChart", autosize:true,
+  symbol:"OANDA:XAUUSD", interval:"D",
+  timezone:"Asia/Bangkok", theme:"dark", style:"1", locale:"th",
+  toolbar_bg:"#161b22", enable_publishing:false,
+  withdateranges:true, range:"3M", hide_side_toolbar:false,
+  allow_symbol_change:true,
+  watchlist:["OANDA:XAUUSD","OANDA:XAGUSD","TVC:DXY","TVC:US10Y","NYMEX:CL1!","TVC:GOLD"],
+  details:true, hotlist:true, calendar:true,
+  studies:["RSI@tv-basicstudies","MACD@tv-basicstudies","BB@tv-basicstudies"],
+  show_popup_button:true, popup_width:"1200", popup_height:"700",
+  backgroundColor:"#0d1117",
+  overrides:{
+    "paneProperties.background":"#0d1117",
+    "paneProperties.backgroundGradientStartColor":"#0d1117",
+    "paneProperties.backgroundGradientEndColor":"#161b22"
+  }
+});
+
+/* ══════════════════════════════════════════════
+   GOLD PRICE + CONVERTER
+══════════════════════════════════════════════ */
+let liveUSDTHB = null;
+let liveXAU    = null;
+
+function fmt(n){ return n ? n.toLocaleString('th-TH',{maximumFractionDigits:2}) : '—'; }
+
+/* Thai gold formula: XAU(USD/oz) × USD/THB × (15.244g / 31.1035g/oz) × 0.965 purity */
+function calcThaiGold(xau, rate){
+  const base = xau * rate * (15.244 / 31.1035) * 0.965;
+  return {
+    barBuy:  Math.round(base / 50) * 50 - 50,
+    barSell: Math.round(base / 50) * 50 + 50,
+    jewBuy:  Math.round(base / 50) * 50 - 200,
+    jewSell: Math.round(base / 50) * 50 + 600,
+    source:  'คำนวณจาก XAU/USD'
+  };
+}
+
+async function fetchRates(){
+  /* 1. USD/THB */
+  try{
+    const r = await fetch('https://api.exchangerate-api.com/v4/latest/USD',{signal:AbortSignal.timeout(7000)});
+    const j = await r.json();
+    if(j.rates?.THB){ liveUSDTHB = j.rates.THB; }
+  }catch{}
+
+  /* 2. XAU/USD via metals.live */
+  try{
+    const r = await fetch('https://api.metals.live/v1/spot/gold',{signal:AbortSignal.timeout(7000)});
+    const j = await r.json();
+    if(j.price){ liveXAU = j.price; }
+  }catch{}
+
+  /* 3. Fallback XAU via Yahoo Finance proxy */
+  if(!liveXAU){
+    try{
+      const url = 'https://query1.finance.yahoo.com/v7/finance/quote?symbols=GC%3DF';
+      const r = await fetch('https://api.allorigins.win/get?url='+encodeURIComponent(url),{signal:AbortSignal.timeout(9000)});
+      const j = await r.json();
+      const data = JSON.parse(j.contents||'{}');
+      const p = data?.quoteResponse?.result?.[0]?.regularMarketPrice;
+      if(p) liveXAU = p;
+    }catch{}
+  }
+
+  updateGoldStrip();
+}
+
+function updateGoldStrip(){
+  if(liveUSDTHB){
+    document.getElementById('usdthbVal').textContent = liveUSDTHB.toFixed(2);
+    document.getElementById('rateSrc').textContent = 'exchangerate-api.com';
+  }
+  if(liveXAU){
+    document.getElementById('xauVal').textContent = '$'+liveXAU.toLocaleString('en-US',{maximumFractionDigits:2});
+  }
+  if(liveXAU && liveUSDTHB){
+    const g = calcThaiGold(liveXAU, liveUSDTHB);
+    document.getElementById('barBuy').textContent  = fmt(g.barBuy)  + ' ฿';
+    document.getElementById('barSell').textContent = fmt(g.barSell) + ' ฿';
+    document.getElementById('jewBuy').textContent  = fmt(g.jewBuy)  + ' ฿';
+    document.getElementById('jewSell').textContent = fmt(g.jewSell) + ' ฿';
+    document.getElementById('barSrc').textContent  = g.source;
+    const pct = ((g.jewSell - g.barSell) / g.barSell * 100).toFixed(2);
+    document.getElementById('jewPct').textContent  = '+'+pct+'%';
+  }
+}
+
+function convertCurrency(){
+  const usd = parseFloat(document.getElementById('usdInput').value);
+  if(!isNaN(usd) && liveUSDTHB){
+    document.getElementById('thbOutput').textContent = (usd * liveUSDTHB).toLocaleString('th-TH',{maximumFractionDigits:2}) + ' ฿';
+  } else {
+    document.getElementById('thbOutput').textContent = '—';
+  }
+}
+
+/* ══════════════════════════════════════════════
+   NEWS
+══════════════════════════════════════════════ */
+const SOURCES = [
+  { name:'Kitco News',    url:'https://www.kitco.com/rss/market-news.rss' },
+  { name:'Reuters',       url:'https://feeds.reuters.com/reuters/businessNews' },
+  { name:'BBC Business',  url:'https://feeds.bbci.co.uk/news/business/rss.xml' },
+  { name:'Reuters Energy',url:'https://feeds.reuters.com/reuters/energyNews' },
+  { name:'NYT Business',  url:'https://rss.nytimes.com/services/xml/rss/nyt/Business.xml' },
+  { name:'MarketWatch',   url:'https://feeds.marketwatch.com/marketwatch/topstories/' },
+  { name:'Yahoo Finance', url:'https://finance.yahoo.com/rss/topfinstories' },
+];
+
+const KW = {
+  gold:    ['gold','xau','silver','xag','bullion','precious','platinum','palladium'],
+  oil:     ['oil','opec','crude','brent','wti','petroleum','energy','gas','fuel','lng'],
+  fed:     ['fed','federal reserve','fomc','powell','rate hike','rate cut','interest rate','boe','ecb','central bank','monetary'],
+  economy: ['inflation','cpi','pce','gdp','recession','unemployment','nfp','jobs','treasury','yield','dollar','tariff','trade war','debt','sanction'],
+};
+
+const HIGH_KW = ['war','attack','crisis','emergency','sanctions','default','collapse','bank failure','fed rate decision','rate decision','inflation surge','cpi','gdp','recession','federal reserve announces'];
+const MED_KW  = ['rate','dollar','treasury','yield','china','oil','opec','tariff','trade','budget','earnings'];
+
+let impactFilter = 'all';
+let topicFilter  = 'all';
+let newsCache    = [];
+let notifOn      = false;
+let seenAlerts   = new Set();
+
+function getImpact(title){
+  const t = title.toLowerCase();
+  if(HIGH_KW.some(k => t.includes(k))) return 'high';
+  if(MED_KW.some(k => t.includes(k)))  return 'medium';
+  if(KW.gold.some(k => t.includes(k))) return 'gold';
+  return 'low';
+}
+
+function getTopic(title){
+  const t = (title).toLowerCase();
+  if(KW.oil.some(k => t.includes(k)))     return 'oil';
+  if(KW.gold.some(k => t.includes(k)))    return 'gold';
+  if(KW.fed.some(k => t.includes(k)))     return 'fed';
+  if(KW.economy.some(k => t.includes(k))) return 'economy';
+  return 'other';
+}
+
+function topicChip(tp){
+  const map = {gold:'topic-gold ✨ ทองคำ', oil:'topic-oil 🛢 น้ำมัน', fed:'topic-fed 🏦 Fed', economy:'topic-economy 📊 เศรษฐกิจ'};
+  const v = map[tp]; if(!v) return '';
+  const [cls,...words] = v.split(' ');
+  return `<span class="topic-chip ${cls}">${words.join(' ')}</span>`;
+}
+
+const IMPACT_LABEL = {high:'🔴 สำคัญ', medium:'🟡 กลาง', low:'🟢 น้อย', gold:'✨ ทองคำ'};
+
+function timeAgo(ds){
+  const d = Math.floor((Date.now() - new Date(ds)) / 60000);
+  if(isNaN(d)||d<0) return '';
+  if(d<1)    return 'เมื่อกี้';
+  if(d<60)   return d+' นาทีที่แล้ว';
+  if(d<1440) return Math.floor(d/60)+' ชั่วโมงที่แล้ว';
+  return new Date(ds).toLocaleDateString('th-TH',{day:'numeric',month:'short'});
+}
+
+function goldScore(item){
+  const t = (item.title+' '+(item.description||'')).toLowerCase();
+  return Object.values(KW).flat().filter(k=>t.includes(k)).length;
+}
+
+function matchFilters(item){
+  const imp = item._impact;
+  const top = item._topic;
+  if(impactFilter !== 'all'){
+    if(impactFilter === 'high'   && imp !== 'high')                  return false;
+    if(impactFilter === 'medium' && imp !== 'medium')                return false;
+    if(impactFilter === 'low'    && imp !== 'low' && imp !== 'gold') return false;
+  }
+  if(topicFilter !== 'all' && top !== topicFilter) return false;
+  return true;
+}
+
+/* filter buttons */
+function setImpactFilter(f,btn){
+  impactFilter = f;
+  document.querySelectorAll('[id^="fi-"]').forEach(b=>b.classList.remove('active','active-red','active-yellow','active-green'));
+  const cls = f==='high'?'active-red':f==='medium'?'active-yellow':f==='low'?'active-green':'active';
+  btn.classList.add(cls);
+  renderNews();
+}
+function setTopicFilter(f,btn){
+  topicFilter = f;
+  document.querySelectorAll('[id^="ft-"]').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderNews();
+}
+
+/* ── RSS XML parser ── */
+function parseXML(xml, srcName){
+  try{
+    const doc = new DOMParser().parseFromString(xml,'text/xml');
+    if(doc.querySelector('parsererror')) return [];
+    return Array.from(doc.querySelectorAll('item')).slice(0,25).map(el=>{
+      const t = tag => { const n=el.querySelector(tag); return n?(n.textContent||'').replace(/<!\[CDATA\[|\]\]>/g,'').trim():'' };
+      let link = t('link');
+      if(!link){ const ln=el.getElementsByTagName('link')[0]; if(ln) link=ln.textContent||ln.getAttribute('href')||''; }
+      return { title:t('title')||'(no title)', link:link.trim(), pubDate:t('pubDate')||t('dc:date')||new Date().toUTCString(), description:t('description').replace(/<[^>]+>/g,'').slice(0,200), sourceName:srcName };
+    }).filter(x=>x.title.length>5);
+  }catch{ return []; }
+}
+
+async function fetchRSS(src){
+  const enc = encodeURIComponent(src.url);
+  const tries = [
+    async()=>{ const r=await fetch('https://api.allorigins.win/get?url='+enc,{signal:AbortSignal.timeout(10000)}); const j=await r.json(); if(j?.contents?.includes('<item')) return parseXML(j.contents,src.name); return []; },
+    async()=>{ const r=await fetch('https://corsproxy.io/?'+enc,{signal:AbortSignal.timeout(10000)}); const t=await r.text(); if(t.includes('<item')) return parseXML(t,src.name); return []; },
+    async()=>{ const r=await fetch('https://api.rss2json.com/v1/api.json?rss_url='+enc+'&count=25',{signal:AbortSignal.timeout(10000)}); const j=await r.json(); if(j.items?.length) return j.items.map(i=>({...i,sourceName:src.name})); return []; },
+  ];
+  for(const fn of tries){ try{ const items=await fn(); if(items.length) return {name:src.name,items,ok:true}; }catch{} }
+  return {name:src.name,items:[],ok:false};
+}
+
+/* ── Notifications ── */
+function toggleNotif(){
+  if(!('Notification' in window)){ alert('เบราว์เซอร์นี้ไม่รองรับ notification'); return; }
+  if(!notifOn){
+    Notification.requestPermission().then(p=>{
+      if(p==='granted'){
+        notifOn=true;
+        document.getElementById('notifBtn').classList.add('on');
+        document.getElementById('notifBtn').textContent='🔔 แจ้งเตือนเปิดอยู่';
+      }
+    });
+  } else {
+    notifOn=false;
+    document.getElementById('notifBtn').classList.remove('on');
+    document.getElementById('notifBtn').textContent='🔔 แจ้งเตือนข่าวสำคัญ';
+  }
+}
+
+function maybeAlert(items){
+  const highItems = items.filter(i=>i._impact==='high');
+  if(!highItems.length) return;
+  const first = highItems[0];
+  const key = first.title.slice(0,40);
+  if(seenAlerts.has(key)) return;
+  seenAlerts.add(key);
+
+  /* in-app banner */
+  document.getElementById('alertText').textContent = first.title;
+  document.getElementById('alertBanner').classList.add('show');
+  setTimeout(()=>document.getElementById('alertBanner').classList.remove('show'), 12000);
+
+  /* browser notification */
+  if(notifOn && Notification.permission==='granted'){
+    new Notification('⚠️ ข่าวสำคัญ — Gold Dashboard',{ body:first.title, tag:'gold-alert' });
+  }
+}
+
+/* ── Render ── */
+function renderNews(){
+  const list = document.getElementById('newsList');
+  const filtered = newsCache.filter(matchFilters);
+  document.getElementById('newsCount').textContent = filtered.length+' รายการ';
+  if(!filtered.length){
+    list.innerHTML="<div class='state-msg'><p>ไม่พบข่าวในหมวดนี้</p><small>ลองเลือกหมวดอื่น หรือกด รีเฟรช</small></div>";
+    return;
+  }
+  list.innerHTML = filtered.map(item=>{
+    const impact = item._impact;
+    const topic  = item._topic;
+    const title  = item.title.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return `<a class="news-card imp-${impact}" href="${item.link||'#'}" target="_blank" rel="noopener noreferrer">
+      <div class="ncard-top">
+        <span class="source-tag">${item.sourceName}</span>
+        <span class="impact-badge impact-${impact}">${IMPACT_LABEL[impact]}</span>
+      </div>
+      <div class="news-title">${title}</div>
+      <div class="news-foot">${topicChip(topic)}<span>${timeAgo(item.pubDate)}</span></div>
+    </a>`;
+  }).join('');
+}
+
+/* ── Load ── */
+async function loadNews(){
+  const btn  = document.getElementById('refreshBtn');
+  const list = document.getElementById('newsList');
+  btn.classList.add('spinning');
+  list.innerHTML="<div class='state-msg'><div class='spin-ring'></div><p>กำลังดึงข่าวล่าสุด...</p><small>ลอง proxy หลายตัว อาจใช้เวลา 5-10 วินาที</small></div>";
+
+  const results = await Promise.allSettled(SOURCES.map(fetchRSS));
+  let okCount=0, all=[];
+  results.forEach(r=>{ if(r.status==='fulfilled'){ if(r.value.ok) okCount++; all=all.concat(r.value.items); } });
+
+  /* deduplicate */
+  const seen=new Set();
+  all=all.filter(item=>{ const k=item.title.slice(0,50).toLowerCase(); if(seen.has(k)) return false; seen.add(k); return true; });
+
+  /* annotate */
+  all.forEach(item=>{ item._impact=getImpact(item.title); item._topic=getTopic(item.title); });
+
+  /* sort: high impact → gold score → newest */
+  const impOrder = {high:0,medium:1,gold:2,low:3};
+  all.sort((a,b)=>{ const d=impOrder[a._impact]-impOrder[b._impact]; if(d!==0) return d; const gs=goldScore(b)-goldScore(a); if(gs!==0) return gs; return new Date(b.pubDate)-new Date(a.pubDate); });
+
+  newsCache = all.slice(0,100);
+  btn.classList.remove('spinning');
+
+  document.getElementById('srcStatus').textContent = 'แหล่งข่าว: Kitco · Reuters · BBC · NYT · MarketWatch  ('+okCount+'/'+SOURCES.length+' เชื่อมต่อสำเร็จ)';
+  document.getElementById('lastUpdate').textContent = 'อัปเดตล่าสุด: '+new Date().toLocaleTimeString('th-TH');
+
+  if(!newsCache.length){
+    list.innerHTML="<div class='state-msg'><p style='color:#f85149'>ดึงข่าวไม่สำเร็จ</p><small>ตรวจ network หรือ VPN แล้วกด รีเฟรช</small></div>";
+    return;
+  }
+
+  maybeAlert(newsCache);
+  renderNews();
+}
+
+/* ══ BOOT ══ */
+fetchRates();
+loadNews();
+setInterval(()=>{ fetchRates(); loadNews(); }, 5*60*1000);
+</script>
+</body>
+</html>

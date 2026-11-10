@@ -1,0 +1,8 @@
+{
+  "name": "gold-dashboard",
+  "compatibility_date": "2026-11-01",
+  "assets": { "directory": "./public" },
+  "routes": [
+    { "pattern": "gold.jirawong.com", "custom_domain": true }
+  ]
+}
