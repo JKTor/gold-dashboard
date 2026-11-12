@@ -63,6 +63,17 @@ async function goldData() {
   return out;
 }
 
+// ฟีดข่าวที่อนุญาตให้ดึง (กันคนเอา Worker ไปใช้เป็น proxy อื่น)
+const FEEDS = {
+  kitco: 'https://news.google.com/rss/search?q=site:kitco.com+when:3d&hl=en-US&gl=US&ceid=US:en',
+  reuters: 'https://news.google.com/rss/search?q=site:reuters.com+markets+when:1d&hl=en-US&gl=US&ceid=US:en',
+  bbc: 'https://feeds.bbci.co.uk/news/business/rss.xml',
+  nyt: 'https://rss.nytimes.com/services/xml/rss/nyt/Business.xml',
+  mw: 'https://feeds.content.dowjones.io/public/rss/mw_topstories',
+  cnbc: 'https://www.cnbc.com/id/10000664/device/rss/rss.html',
+  fxs: 'https://www.fxstreet.com/rss/news',
+};
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -74,6 +85,18 @@ export default {
       } catch (e) {
         return Response.json({ error: String(e) }, { status: 502 });
       }
+    }
+    if (url.pathname === '/api/rss') {
+      const feed = FEEDS[url.searchParams.get('src')];
+      if (!feed) return new Response('unknown feed', { status: 400 });
+      const r = await fetch(feed, {
+        headers: { 'User-Agent': 'Mozilla/5.0 gold-dashboard' },
+        cf: { cacheTtl: 300, cacheEverything: true },
+      });
+      return new Response(r.body, {
+        status: r.status,
+        headers: { 'Content-Type': 'application/xml; charset=utf-8', 'Cache-Control': 'public, max-age=300' },
+      });
     }
     return env.ASSETS.fetch(request);
   },
