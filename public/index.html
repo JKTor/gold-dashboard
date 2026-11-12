@@ -266,7 +266,8 @@ let liveXAU    = null;
 
 function fmt(n){ return n ? n.toLocaleString('th-TH',{maximumFractionDigits:2}) : '—'; }
 
-/* Thai gold formula: XAU(USD/oz) × USD/THB × (15.244g / 31.1035g/oz) × 0.965 purity */
+/* ราคาทองไทยจริงจากสมาคมค้าทองคำ ผ่าน Worker ที่ /api/gold
+   ถ้าดึงไม่ได้ ค่อยคำนวณประมาณจาก XAU/USD × USD/THB */
 function calcThaiGold(xau, rate){
   const base = xau * rate * (15.244 / 31.1035) * 0.965;
   return {
@@ -274,50 +275,60 @@ function calcThaiGold(xau, rate){
     barSell: Math.round(base / 50) * 50 + 50,
     jewBuy:  Math.round(base / 50) * 50 - 200,
     jewSell: Math.round(base / 50) * 50 + 600,
-    source:  'คำนวณจาก XAU/USD'
+    source:  'ประมาณจาก XAU/USD (ดึงราคาสมาคมไม่ได้)'
   };
 }
 
+let liveThai = null;
+
 async function fetchRates(){
-  /* 1. USD/THB */
+  /* 1. ทางหลัก: Worker ของเราเอง (สมาคมค้าทองคำ + gold-api + er-api) */
   try{
-    const r = await fetch('https://api.exchangerate-api.com/v4/latest/USD',{signal:AbortSignal.timeout(7000)});
+    const r = await fetch('/api/gold',{signal:AbortSignal.timeout(10000),cache:'no-store'});
     const j = await r.json();
-    if(j.rates?.THB){ liveUSDTHB = j.rates.THB; }
+    if(j.usdthb) liveUSDTHB = j.usdthb;
+    if(j.xau)    liveXAU    = j.xau;
+    if(j.thai)   liveThai   = j.thai;
   }catch{}
 
-  /* 2. XAU/USD via metals.live */
-  try{
-    const r = await fetch('https://api.metals.live/v1/spot/gold',{signal:AbortSignal.timeout(7000)});
-    const j = await r.json();
-    if(j.price){ liveXAU = j.price; }
-  }catch{}
-
-  /* 3. Fallback XAU via Yahoo Finance proxy */
+  /* 2. สำรอง: เรียก API ที่เปิด CORS ตรงจากเบราว์เซอร์ */
+  if(!liveUSDTHB){
+    try{
+      const r = await fetch('https://open.er-api.com/v6/latest/USD',{signal:AbortSignal.timeout(7000)});
+      const j = await r.json();
+      if(j.rates?.THB) liveUSDTHB = j.rates.THB;
+    }catch{}
+  }
   if(!liveXAU){
     try{
-      const url = 'https://query1.finance.yahoo.com/v7/finance/quote?symbols=GC%3DF';
-      const r = await fetch('https://api.allorigins.win/get?url='+encodeURIComponent(url),{signal:AbortSignal.timeout(9000)});
+      const r = await fetch('https://api.gold-api.com/price/XAU',{signal:AbortSignal.timeout(7000)});
       const j = await r.json();
-      const data = JSON.parse(j.contents||'{}');
-      const p = data?.quoteResponse?.result?.[0]?.regularMarketPrice;
-      if(p) liveXAU = p;
+      if(j.price) liveXAU = j.price;
     }catch{}
   }
 
   updateGoldStrip();
+  convertCurrency();
 }
 
 function updateGoldStrip(){
   if(liveUSDTHB){
     document.getElementById('usdthbVal').textContent = liveUSDTHB.toFixed(2);
-    document.getElementById('rateSrc').textContent = 'exchangerate-api.com';
   }
   if(liveXAU){
     document.getElementById('xauVal').textContent = '$'+liveXAU.toLocaleString('en-US',{maximumFractionDigits:2});
   }
-  if(liveXAU && liveUSDTHB){
-    const g = calcThaiGold(liveXAU, liveUSDTHB);
+  document.getElementById('rateSrc').textContent = 'gold-api.com · exchangerate-api.com';
+
+  let g = null;
+  if(liveThai){
+    const hhmm = String(liveThai.time||'').slice(11,16); // เวลาไทยจากสมาคมอยู่แล้ว
+    const chg = liveThai.change ? ` · วันนี้ ${liveThai.change>0?'+':''}${fmt(liveThai.change)}` : '';
+    g = {...liveThai, source:`${liveThai.source} ครั้งที่ ${liveThai.round} (${hhmm} น.)${chg}`};
+  } else if(liveXAU && liveUSDTHB){
+    g = calcThaiGold(liveXAU, liveUSDTHB);
+  }
+  if(g){
     document.getElementById('barBuy').textContent  = fmt(g.barBuy)  + ' ฿';
     document.getElementById('barSell').textContent = fmt(g.barSell) + ' ฿';
     document.getElementById('jewBuy').textContent  = fmt(g.jewBuy)  + ' ฿';

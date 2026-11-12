@@ -1,7 +1,8 @@
 {
   "name": "gold-dashboard",
+  "main": "src/worker.js",
   "compatibility_date": "2026-11-01",
-  "assets": { "directory": "./public" },
+  "assets": { "directory": "./public", "binding": "ASSETS" },
   "routes": [
     { "pattern": "gold.jirawong.com", "custom_domain": true }
   ]
