@@ -188,10 +188,10 @@ nav .wrap{display:flex;align-items:center;gap:28px;height:68px}
 .result.small b{font-size:1.15rem}
 .calc-note{font-size:.72rem;color:var(--dim)}
 .stack{position:relative;height:440px}
-.stack .bar{position:absolute;width:76%;filter:drop-shadow(0 30px 40px rgba(0,0,0,.6));transform:perspective(1400px) rotateX(48deg) rotateZ(-14deg)}
-.stack .b1{left:16%;top:0}
-.stack .b2{left:9%;top:27%}
-.stack .b3{left:2%;top:54%}
+.stack{display:grid;place-items:center}
+.bar-float{width:82%;animation:barFloat 4.5s ease-in-out infinite}
+.stack .bar{filter:drop-shadow(0 34px 40px rgba(0,0,0,.65)) drop-shadow(0 0 30px rgba(232,185,49,.25));transform:perspective(1400px) rotateX(42deg) rotateZ(-12deg)}
+@keyframes barFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-26px)}}
 .stack-ray{position:absolute;inset:10% 0 0 10%;background:radial-gradient(closest-side,rgba(232,185,49,.22),transparent);filter:blur(10px)}
 
 /* FOOTER */
@@ -230,7 +230,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
   footer .wrap{padding:18px 16px}
 }
 @media (prefers-reduced-motion:reduce){
-  .hero-bar,.spark,.live-dot{animation:none}
+  .bar-float,.spark,.live-dot{animation:none}
   html{scroll-behavior:auto}
 }
 </style>
@@ -429,9 +429,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
     </div>
     <div class="stack" aria-hidden="true">
       <div class="stack-ray"></div>
-      <div class="bar b1" id="stack1"></div>
-      <div class="bar b2" id="stack2"></div>
-      <div class="bar b3" id="stack3"></div>
+      <div class="bar-float"><div class="bar" id="stack1"></div></div>
     </div>
   </div>
 </section>
@@ -537,9 +535,7 @@ function barSVG(id, v){
   <rect x="24" y="22" width="312" height="176" rx="14" fill="none" stroke="${P.edge}" stroke-opacity=".5"/>
 </svg>`;
 }
-document.getElementById('stack1').innerHTML  = barSVG('a','glass');
-document.getElementById('stack2').innerHTML  = barSVG('b','gold');
-document.getElementById('stack3').innerHTML  = barSVG('c','silver');
+document.getElementById('stack1').innerHTML  = barSVG('a','gold');
 
 
 async function fetchRates(){
