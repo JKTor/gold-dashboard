@@ -190,7 +190,9 @@ nav .wrap{display:flex;align-items:center;gap:28px;height:68px}
 .stack{position:relative;height:440px}
 .stack{display:grid;place-items:center}
 .bar-float{width:96%;animation:barFloat 4.5s ease-in-out infinite}
-.stack .bar{filter:drop-shadow(0 0 30px rgba(232,185,49,.22))}
+.ingot{position:relative}
+.ingot img{display:block;width:100%;height:auto}
+.ingot-price{position:absolute;inset:0;width:100%;height:100%}
 @keyframes barFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-26px)}}
 .stack-ray{position:absolute;inset:10% 0 0 10%;background:radial-gradient(closest-side,rgba(232,185,49,.22),transparent);filter:blur(10px)}
 
@@ -429,7 +431,24 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
     </div>
     <div class="stack" aria-hidden="true">
       <div class="stack-ray"></div>
-      <div class="bar-float"><div class="bar" id="stack1"></div></div>
+      <div class="bar-float">
+        <div class="ingot">
+          <picture>
+            <source srcset="img/ingot.webp" type="image/webp">
+            <img src="img/ingot.webp" width="1200" height="941" alt="ทองคำแท่ง 96.5% น้ำหนัก 1 บาท">
+          </picture>
+          <!-- ราคาจริงวางทับในกล่องบนแท่ง (พิกัดตรงกับรูป 1200x941) -->
+          <svg class="ingot-price" viewBox="0 0 1200 941" aria-hidden="true">
+            <defs>
+              <linearGradient id="ipFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff4bf"/><stop offset=".55" stop-color="#f6d36a"/><stop offset="1" stop-color="#d9a73a"/></linearGradient>
+              <filter id="ipEmboss" x="-10%" y="-30%" width="120%" height="160%"><feDropShadow dx="3" dy="5" stdDeviation="2.5" flood-color="#5a3a04" flood-opacity=".75"/></filter>
+            </defs>
+            <g transform="matrix(0.987,0.167,-0.507,0.863,342,362)">
+              <text class="bar-price" x="228" y="105" text-anchor="middle" font-family="Prompt, sans-serif" font-weight="700" font-size="96" fill="url(#ipFill)" filter="url(#ipEmboss)" textLength="400" lengthAdjust="spacingAndGlyphs">฿ 63,400</text>
+            </g>
+          </svg>
+        </div>
+      </div>
     </div>
   </div>
 </section>
@@ -535,53 +554,7 @@ function barSVG(id, v){
   <rect x="24" y="22" width="312" height="176" rx="14" fill="none" stroke="${P.edge}" stroke-opacity=".5"/>
 </svg>`;
 }
-/* ทองแท่งสามมิติ (ทรงคางหมู หน้าบนแคบกว่าฐาน) วาดด้วย SVG */
-function ingotSVG(){
-  const L=260, W=140, H=46, t=16;                 // ยาว กว้าง สูง และความเอียงของด้านข้าง
-  const P=(x,y,z)=>[40+x+y*0.45, 230+x*0.15-y*0.55-z];
-  const pts=(...a)=>a.map(p=>P(...p).map(n=>n.toFixed(1)).join(',')).join(' ');
-  const top   = pts([t,t,H],[L-t,t,H],[L-t,W-t,H],[t,W-t,H]);
-  const front = pts([0,0,0],[L,0,0],[L-t,t,H],[t,t,H]);
-  const right = pts([L,0,0],[L,W,0],[L-t,W-t,H],[L-t,t,H]);
-  const left  = pts([0,0,0],[t,t,H],[t,W-t,H],[0,W,0]);
-  const [ox,oy] = P(t,W-t,H);                      // มุมหลังซ้ายของหน้าบน = จุดเริ่มตัวหนังสือ
-  const cx = (L-2*t)/2;
-  const price = lastG ? '฿ '+Math.round(lastG.barSell).toLocaleString('en-US') : '1 BAHT';
-  const [sx,sy] = P(L/2,W/2,0);
-  return `<svg class="bar-svg" viewBox="25 95 360 220">
-  <defs>
-    <linearGradient id="igTop" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#fff4c8"/><stop offset=".3" stop-color="#f7d670"/><stop offset=".6" stop-color="#d9a634"/><stop offset=".85" stop-color="#f8de8a"/><stop offset="1" stop-color="#c38f27"/>
-    </linearGradient>
-    <linearGradient id="igFront" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#e6b440"/><stop offset=".5" stop-color="#b9831f"/><stop offset="1" stop-color="#7a5110"/>
-    </linearGradient>
-    <linearGradient id="igRight" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#a87418"/><stop offset="1" stop-color="#5e3c09"/>
-    </linearGradient>
-    <radialGradient id="igShadow"><stop offset="0" stop-color="#000" stop-opacity=".7"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
-    <radialGradient id="igGlow"><stop offset="0" stop-color="#e8b931" stop-opacity=".35"/><stop offset="1" stop-color="#e8b931" stop-opacity="0"/></radialGradient>
-  </defs>
-  <ellipse cx="${sx}" cy="${sy+38}" rx="190" ry="34" fill="url(#igGlow)"/>
-  <ellipse cx="${sx}" cy="${sy+30}" rx="165" ry="22" fill="url(#igShadow)"/>
-  <polygon points="${left}"  fill="#8a5c12"/>
-  <polygon points="${right}" fill="url(#igRight)"/>
-  <polygon points="${front}" fill="url(#igFront)"/>
-  <polygon points="${top}"   fill="url(#igTop)" stroke="#fff3c4" stroke-opacity=".7" stroke-width="1"/>
-  <polyline points="${pts([t,t,H],[L-t,t,H])}" stroke="#fff6d6" stroke-width="1.6" fill="none" opacity=".9"/>
-  <polyline points="${pts([0,0,0],[L,0,0],[L,W,0])}" stroke="#4a2f06" stroke-width="1" fill="none" opacity=".6"/>
-  <g transform="matrix(1,0.15,-0.45,0.55,${ox.toFixed(1)},${oy.toFixed(1)})" font-family="Prompt, sans-serif" text-anchor="middle" fill="#7a5212">
-    <g opacity=".95">
-      <text x="${cx}" y="24" font-size="19" font-weight="700" letter-spacing="5">FINE GOLD</text>
-      <text x="${cx}" y="40" font-size="11" letter-spacing="3">96.5% · THAILAND</text>
-      <text class="bar-price" x="${cx}" y="78" font-size="29" font-weight="700" letter-spacing="1">${price}</text>
-      <text x="${cx}" y="97" font-size="10" letter-spacing="3">1 BAHT · 15.244 g</text>
-    </g>
-  </g>
-  <polygon points="${pts([t+6,t+6,H],[t+70,t+6,H],[t+30,W-t-6,H],[t+6,W-t-6,H])}" fill="#fff" opacity=".18"/>
-</svg>`;
-}
-document.getElementById('stack1').innerHTML = ingotSVG();
+
 
 
 
