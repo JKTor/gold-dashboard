@@ -2,7 +2,8 @@
   "name": "gold-dashboard",
   "main": "src/worker.js",
   "compatibility_date": "2026-11-01",
-  "assets": { "directory": "./public", "binding": "ASSETS" },
+  // หน้าแรกต้องผ่าน Worker ก่อน (ใส่ราคาลง HTML) ไม่งั้น Cloudflare ส่ง index.html ไปตรงๆ
+  "assets": { "directory": "./public", "binding": "ASSETS", "run_worker_first": ["/", "/index.html"] },
   "routes": [
     { "pattern": "gold.jirawong.com", "custom_domain": true }
   ]

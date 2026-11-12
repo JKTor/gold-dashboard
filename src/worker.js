@@ -98,6 +98,67 @@ export default {
         headers: { 'Content-Type': 'application/xml; charset=utf-8', 'Cache-Control': 'public, max-age=300' },
       });
     }
+    if (request.method === 'GET' && (url.pathname === '/' || url.pathname === '/index.html')) {
+      // ถ้าส่วนใส่ราคาพังด้วยเหตุอะไรก็ตาม ส่งหน้าเดิมไป เว็บต้องไม่ล่ม
+      try { return await renderHome(request, env); } catch { return env.ASSETS.fetch(request); }
+    }
     return env.ASSETS.fetch(request);
   },
 };
+
+// ─── ใส่ราคาลง HTML ก่อนส่ง (ให้ Google เห็นตัวเลขจริง ไม่ใช่ "—") ─────────────
+// หน้าเว็บยังดึงราคาใหม่เองด้วย JS เหมือนเดิม ส่วนนี้แค่ทำให้ HTML แรกมีราคาอยู่แล้ว
+const SSR_KEY = 'https://gold.jirawong.com/__ssr-gold';
+
+async function cachedGold() {
+  const cache = caches.default;
+  const hit = await cache.match(SSR_KEY);
+  if (hit) return hit.json();
+  const g = await goldData();
+  if (g.thai) {
+    await cache.put(SSR_KEY, new Response(JSON.stringify(g), { headers: { 'Cache-Control': 'max-age=300' } }));
+  }
+  return g;
+}
+
+const fmtTH = (n) => (n ? n.toLocaleString('th-TH', { maximumFractionDigits: 2 }) : '—');
+const fmtEN = (n) => Math.round(n).toLocaleString('en-US');
+
+async function renderHome(request, env) {
+  // ขอหน้าแบบไม่มี If-None-Match ไม่งั้นได้ 304 ไม่มีเนื้อหา แล้วเบราว์เซอร์จะใช้หน้าเก่าที่ราคาเก่า
+  const page = await env.ASSETS.fetch(new Request(new URL('/', request.url)));
+  let g;
+  try { g = await cachedGold(); } catch { return page; }
+  const t = g.thai;
+  if (!t) return page; // ไม่มีราคาสมาคม ก็ส่งหน้าเดิม ให้ JS จัดการเอง
+
+  const date = new Date().toLocaleDateString('th-TH', { timeZone: 'Asia/Bangkok', day: 'numeric', month: 'long', year: 'numeric' });
+  const title = `ราคาทองวันนี้ ${date} ทองแท่งขายออก ${fmtEN(t.barSell)} บาท | Gold Dashboard`;
+  const desc = `ราคาทองวันนี้ ${date} จากสมาคมค้าทองคำ ทองแท่ง รับซื้อ ${fmtEN(t.barBuy)} ขายออก ${fmtEN(t.barSell)} บาท ทองรูปพรรณ รับซื้อ ${fmtEN(t.jewBuy)} ขายออก ${fmtEN(t.jewSell)} บาท พร้อมกราฟ XAU/USD และข่าวทองคำ อัปเดตทุก 5 นาที`;
+  const hhmm = String(t.time || '').slice(11, 16);
+
+  const text = (s) => ({ element(el) { el.setInnerContent(s); } });
+  const attr = (name, v) => ({ element(el) { el.setAttribute(name, v); } });
+
+  const res = new HTMLRewriter()
+    .on('title', text(title))
+    .on('meta[name="description"]', attr('content', desc))
+    .on('meta[property="og:title"]', attr('content', title))
+    .on('meta[property="og:description"]', attr('content', desc))
+    .on('#barSell', text(fmtTH(t.barSell) + ' ฿'))
+    .on('#barBuy', text(fmtTH(t.barBuy) + ' ฿'))
+    .on('#jewSell', text(fmtTH(t.jewSell) + ' ฿'))
+    .on('#jewBuy', text(fmtTH(t.jewBuy) + ' ฿'))
+    .on('#jewPct', text('+' + ((t.jewSell - t.barSell) / t.barSell * 100).toFixed(2) + '%'))
+    .on('#heroJew', text('฿ ' + fmtEN(t.jewSell)))
+    .on('div.bar-price', text('฿ ' + fmtEN(t.barSell)))
+    .on('#barSrc', text(`ราคา${t.source} ครั้งที่ ${t.round} (${hhmm} น.)`))
+    .on('#xauVal', text(g.xau ? '$' + g.xau.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '—'))
+    .on('#usdthbVal', text(g.usdthb ? g.usdthb.toFixed(2) : '—'))
+    .transform(page);
+
+  const headers = new Headers(res.headers);
+  headers.delete('ETag');
+  headers.set('Cache-Control', 'public, max-age=60');
+  return new Response(res.body, { status: res.status, headers });
+}
