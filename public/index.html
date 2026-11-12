@@ -107,7 +107,15 @@ nav .wrap{display:flex;align-items:center;gap:28px;height:68px}
 .feat p{font-size:.85rem;color:var(--muted)}
 
 /* MARKET (กราฟ + ข่าว) */
-.market{display:grid;grid-template-columns:1fr 400px;gap:20px;height:680px}
+.market{display:flex;flex-direction:column;gap:20px}
+.market .chart-panel{height:720px}
+.market .news-panel{height:640px}
+.news-panel .news-scroll{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;align-content:start;padding:14px}
+.news-panel .news-scroll .news-card{margin-bottom:0}
+.news-panel .news-scroll .state-msg{grid-column:1/-1}
+.news-panel .panel-head{flex-wrap:wrap}
+.news-filters{display:flex;gap:6px 24px;flex-wrap:wrap}
+.news-filters .filter-row{margin-bottom:0}
 .panel{background:#100e0b;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;display:flex;flex-direction:column;min-height:0;min-width:0}
 .panel-head{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:10px}
 .panel-title{font:500 .95rem 'Prompt';display:flex;align-items:center;gap:10px}
@@ -197,9 +205,8 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
   .stats-panel{grid-template-columns:1fr 1fr;row-gap:24px}
   .stat:nth-child(2){border-right:0}
   .features{grid-template-columns:1fr}
-  .market{grid-template-columns:1fr;height:auto}
-  .market .chart-panel{height:480px}
-  .market .news-panel{height:620px}
+  .market .chart-panel{height:520px}
+  .market .news-panel{height:680px}
   .stack{height:330px;max-width:520px;width:100%;margin:0 auto}
 }
 @media (max-width:560px){
@@ -332,7 +339,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
       </div>
       <div class="feat">
         <div class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg></div>
-        <div><h3>กราฟ XAU/USD สด</h3><p>กราฟ TradingView พร้อม RSI, MACD, Bollinger และปฏิทินเศรษฐกิจ</p></div>
+        <div><h3>กราฟ XAU/USD สด</h3><p>กราฟ TradingView เต็มความกว้าง พร้อม Bollinger และปฏิทินเศรษฐกิจ</p></div>
       </div>
       <div class="feat">
         <div class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg></div>
@@ -436,7 +443,7 @@ new TradingView.widget({
   allow_symbol_change:true,
   watchlist:["OANDA:XAUUSD","OANDA:XAGUSD","TVC:DXY","TVC:US10Y","NYMEX:CL1!","TVC:GOLD"],
   details:true, hotlist:true, calendar:true,
-  studies:["RSI@tv-basicstudies","MACD@tv-basicstudies","BB@tv-basicstudies"],
+  studies:["BB@tv-basicstudies"],
   show_popup_button:true, popup_width:"1200", popup_height:"700",
   backgroundColor:"#0e0c09",
   overrides:{
