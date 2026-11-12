@@ -65,9 +65,13 @@ nav .wrap{display:flex;align-items:center;gap:28px;height:68px}
 .chips span:first-child{margin-left:0;background:#f7d77a}.chips span:nth-child(2){background:#e8b931}.chips span:nth-child(3){background:#b8862b;color:#fff}
 .hero-meta b{display:block;color:var(--text);font:600 .95rem 'Prompt'}
 
-.hero-art{position:relative;height:420px}
-.glow-orb{position:absolute;right:-6%;top:6%;width:68%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 30% 30%,#f3c54a,#b8862b 50%,#5e3f0c 95%);box-shadow:0 0 120px 10px rgba(232,185,49,.32)}
-.hero-bar{position:absolute;left:0;top:20%;width:90%;filter:drop-shadow(0 40px 50px rgba(0,0,0,.65));transform:perspective(1400px) rotateY(-16deg) rotateX(10deg) rotateZ(-9deg);animation:float 6s ease-in-out infinite}
+.hero-art{position:relative;display:flex;flex-direction:column;gap:14px}
+.hero-cards{display:grid;grid-template-columns:1fr 1fr;gap:14px;position:relative;z-index:2}
+.hcard{border:1.5px solid rgba(247,215,122,.55);border-radius:18px;padding:14px 16px;background:linear-gradient(180deg,rgba(40,32,16,.75),rgba(14,12,9,.85));box-shadow:0 0 28px -6px rgba(232,185,49,.45),inset 0 0 20px rgba(232,185,49,.06)}
+.hcard-t{font:600 1.15rem 'Prompt';color:var(--gold2)}
+.hcard-s{font-size:.7rem;letter-spacing:.08em;color:var(--muted);margin:2px 0 10px}
+.hcard-p{font:700 clamp(1.4rem,2.6vw,2rem) 'Prompt';text-align:center;padding:6px 8px;border-radius:12px;border:1px solid var(--line2);background:rgba(0,0,0,.4);background-clip:padding-box;color:#f7d77a;text-shadow:0 0 18px rgba(232,185,49,.45);font-variant-numeric:tabular-nums}
+.hero-photo{display:block;width:100%;height:auto;border-radius:22px;-webkit-mask-image:radial-gradient(ellipse 75% 80% at 50% 50%,#000 60%,transparent 100%);mask-image:radial-gradient(ellipse 75% 80% at 50% 50%,#000 60%,transparent 100%)}
 @keyframes float{0%,100%{translate:0 0}50%{translate:0 -12px}}
 .bar-svg{width:100%;height:auto;display:block}
 
@@ -201,7 +205,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
   nav .wrap{justify-content:space-between}
   .hero{padding:40px 0 20px}
   .hero .wrap,.calc{grid-template-columns:1fr}
-  .hero-art{height:320px;max-width:520px;width:100%;margin:0 auto}
+  .hero-art{max-width:560px;width:100%;margin:0 auto}
   .stats-panel{grid-template-columns:1fr 1fr;row-gap:24px}
   .stat:nth-child(2){border-right:0}
   .features{grid-template-columns:1fr}
@@ -214,7 +218,9 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
   nav .wrap{gap:10px}
   .logo .t{font-size:.95rem}
   .btn-ghost{padding:7px 12px;font-size:.76rem}
-  .hero-art{height:240px}
+  .hcard{padding:10px 12px}
+  .hcard-t{font-size:.95rem}
+  .hcard-s{font-size:.6rem}
   .stats-panel{grid-template-columns:1fr;padding:12px 4px}
   .stat{border-right:0 !important;border-bottom:1px solid var(--line);padding:12px 18px}
   .stat:last-child{border-bottom:0}
@@ -278,9 +284,23 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
         </div>
       </div>
     </div>
-    <div class="hero-art" aria-hidden="true">
-      <div class="glow-orb"></div>
-      <div class="hero-bar" id="heroBar"></div>
+    <div class="hero-art">
+      <div class="hero-cards">
+        <div class="hcard">
+          <div class="hcard-t">ทองคำรูปพรรณ</div>
+          <div class="hcard-s">96.5% · THAILAND · ขายออก</div>
+          <div class="hcard-p" id="heroJew">—</div>
+        </div>
+        <div class="hcard">
+          <div class="hcard-t">ทองคำแท่ง</div>
+          <div class="hcard-s">96.5% · THAILAND · ขายออก</div>
+          <div class="hcard-p bar-price">—</div>
+        </div>
+      </div>
+      <picture>
+        <source srcset="img/hero-gold.webp" type="image/webp">
+        <img class="hero-photo" src="img/hero-gold.jpg" width="1200" height="569" alt="ทองรูปพรรณและทองคำแท่ง 96.5%">
+      </picture>
     </div>
   </div>
 </header>
@@ -517,7 +537,6 @@ function barSVG(id, v){
   <rect x="24" y="22" width="312" height="176" rx="14" fill="none" stroke="${P.edge}" stroke-opacity=".5"/>
 </svg>`;
 }
-document.getElementById('heroBar').innerHTML = barSVG('h','gold');
 document.getElementById('stack1').innerHTML  = barSVG('a','glass');
 document.getElementById('stack2').innerHTML  = barSVG('b','gold');
 document.getElementById('stack3').innerHTML  = barSVG('c','silver');
@@ -579,6 +598,7 @@ function updateGoldStrip(){
     document.getElementById('barSrc').innerHTML    = g.source;
     lastG = g;
     document.querySelectorAll('.bar-price').forEach(el=>el.textContent='฿ '+Math.round(g.barSell).toLocaleString('en-US'));
+    document.getElementById('heroJew').textContent = '฿ '+Math.round(g.jewSell).toLocaleString('en-US');
     calcValue();
     const pct = ((g.jewSell - g.barSell) / g.barSell * 100).toFixed(2);
     document.getElementById('jewPct').textContent  = '+'+pct+'%';
