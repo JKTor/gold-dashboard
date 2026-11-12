@@ -7,15 +7,36 @@ const FX_URL = 'https://open.er-api.com/v6/latest/USD';
 async function getJSON(url) {
   const r = await fetch(url, {
     headers: { 'User-Agent': 'Mozilla/5.0 gold-dashboard' },
-    cf: { cacheTtl: 60, cacheEverything: true },
+    
   });
   if (!r.ok) throw new Error(url + ' ' + r.status);
   return r.json();
 }
 
+// สมาคมตอบ 502 เป็นพักๆ → ลองใหม่ 3 รอบ ถ้ายังพังใช้ราคาล่าสุดที่เคยดึงได้ (เก็บใน cache)
+const LAST_GTA = 'https://gold.jirawong.com/__last-gta';
+async function getGTA() {
+  const cache = caches.default;
+  for (let i = 0; i < 3; i++) {
+    try {
+      const g = await getJSON(GTA_URL);
+      if (g.bL_SellPrice) {
+        await cache.put(LAST_GTA, new Response(JSON.stringify(g), {
+          headers: { 'Cache-Control': 'max-age=86400' },
+        }));
+        return g;
+      }
+    } catch {}
+    await new Promise(r => setTimeout(r, 400));
+  }
+  const old = await cache.match(LAST_GTA);
+  if (old) return old.json();
+  throw new Error('goldtraders ไม่ตอบ');
+}
+
 async function goldData() {
   const [gta, spot, fx] = await Promise.allSettled([
-    getJSON(GTA_URL), getJSON(SPOT_URL), getJSON(FX_URL),
+    getGTA(), getJSON(SPOT_URL), getJSON(FX_URL),
   ]);
   const out = { updated: new Date().toISOString() };
 
@@ -33,6 +54,8 @@ async function goldData() {
     };
     out.xau = g.goldSpot;
     out.usdthb = g.bahtPerUSD;
+  } else {
+    out.thaiError = gta.status === 'rejected' ? String(gta.reason) : 'bad data';
   }
   // ราคา spot สดกว่าของสมาคม (สมาคมอัปเดตเป็นรอบ)
   if (spot.status === 'fulfilled' && spot.value.price) out.xau = spot.value.price;
